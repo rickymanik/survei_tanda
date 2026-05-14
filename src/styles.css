@@ -1,0 +1,49 @@
+:root {
+  --page: #eef4f7;
+  --panel: #ffffff;
+  --ink: #1e293b;
+  --muted: #64748b;
+  --line: #d7e2e8;
+  --teal: #19b7c8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font-family: Arial, Helvetica, sans-serif;
+  letter-spacing: 0;
+}
+
+.app-shell {
+  align-items: center;
+  display: grid;
+  min-height: 100vh;
+  padding: 24px;
+  place-items: center;
+}
+
+.section-block {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  max-width: 640px;
+  padding: 32px;
+  width: 100%;
+}
+
+h1 {
+  font-size: 32px;
+  line-height: 1.2;
+  margin: 0 0 12px;
+}
+
+p {
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0;
+}
