@@ -1,10 +1,6 @@
 # t.anda — Platform Survei Online
 
-![React](https://img.shields.io/badge/React-Frontend-61DAFB?logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-Build_Tool-646CFF?logo=vite&logoColor=white)
-
-t.anda adalah aplikasi survei online sederhana yang dirancang untuk membantu pengguna membuat survei, mengisi survei, mengumpulkan poin, dan menukarkan poin menjadi hadiah.  
+t.anda (tanggapan anda) adalah aplikasi survei online sederhana yang dirancang untuk membantu pengguna membuat survei, mengisi survei, mengumpulkan poin, dan menukarkan poin menjadi hadiah.  
 
 
 ---
@@ -71,9 +67,15 @@ t.anda adalah aplikasi survei online sederhana yang dirancang untuk membantu pen
 
 ---
 
+# 📂 Struktur Project
 
----
-
+src/
+├── components/
+├── pages/
+├── hooks/
+├── utils/
+├── data/
+└── types/
 
 ---
 
@@ -121,11 +123,12 @@ npm run preview
 
 # 👥 Tim Pengembang
 
-- Dimas
-- Mike
-- Ricky
-- Brema
-- Jonathan
+- Dimas Parianto                   243303611308
+- Mike Okten Imanuel Tampubolon    243303611329
+- Brema Misael Tarigan             243303611318
+- Jonathan Sianipar                243303611257
+- Ricky Rivaldo Manik              243303612336
+
 
 ---
 
