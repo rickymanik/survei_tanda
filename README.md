@@ -67,18 +67,6 @@ t.anda (tanggapan anda) adalah aplikasi survei online sederhana yang dirancang u
 
 ---
 
-# 📂 Struktur Project
-
-src/
-├── components/
-├── pages/
-├── hooks/
-├── utils/
-├── data/
-└── types/
-
----
-
 # 🚀 Menjalankan Project
 
 ## 1. Clone Repository
@@ -123,11 +111,11 @@ npm run preview
 
 # 👥 Tim Pengembang
 
-- Dimas Parianto                   243303611308
-- Mike Okten Imanuel Tampubolon    243303611329
-- Brema Misael Tarigan             243303611318
-- Jonathan Sianipar                243303611257
-- Ricky Rivaldo Manik              243303612336
+- Dimas Parianto                   - 243303611308
+- Mike Okten Imanuel Tampubolon    - 243303611329
+- Brema Misael Tarigan             - 243303611318
+- Jonathan Sianipar                - 243303611257
+- Ricky Rivaldo Manik              - 243303612336
 
 
 ---
