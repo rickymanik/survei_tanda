@@ -21,49 +21,49 @@ t.anda (tanggapan anda) adalah aplikasi survei online sederhana yang dirancang u
 
 ## Halaman Login
 
-![Login](./frontend/public/preview/login.png)
+![Login](./public/preview/login.png)
 
 ---
 
 ## Halaman Registrasi
 
-![Register](./frontend/public/preview/register.png)
+![Register](./public/preview/register.png)
 
 ---
 
 ## Beranda
 
-![Beranda](./frontend/public/preview/beranda.png)
+![Beranda](./public/preview/beranda.png)
 
 ---
 
 ## Survei Saya
 
-![Survei Saya](./frontend/public/preview/survei-saya.png)
+![Survei Saya](./public/preview/survei-saya.png)
 
 ---
 
 ## Halaman Hadiah
 
-![Hadiah](./frontend/public/preview/hadiah.png)
+![Hadiah](./public/preview/hadiah.png)
 
 ---
 
 ## Halaman Profil
 
-![Profil](./frontend/public/preview/profil.png)
+![Profil](./public/preview/profil.png)
 
 ---
 
 ## Isi Survei
 
-![Isi Survei](./frontend/public/preview/isi-survei.png)
+![Isi Survei](./public/preview/isi-survei.png)
 
 ---
 
 ## Buat Survei
 
-![Buat Survei](./frontend/public/preview/buat-survei.png)
+![Buat Survei](./public/preview/buat-survei.png)
 
 ---
 
