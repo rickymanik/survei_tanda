@@ -9,22 +9,35 @@ import { labelTanggal } from "../utils/survei";
 type HadiahProps = {
   data: DataAplikasi;
   penggunaAktif: Pengguna;
-  onTukar: (hadiah: Hadiah) => HasilPenukaran;
+  onTukar: (hadiah: Hadiah) => HasilPenukaran | Promise<HasilPenukaran>;
+  onTambahHadiah: (hadiah: Pick<Hadiah, "name" | "description" | "pointsCost" | "stock">) => void | Promise<void>;
 };
 
-export function Hadiah({ data, penggunaAktif, onTukar }: HadiahProps) {
+export function Hadiah({ data, penggunaAktif, onTukar, onTambahHadiah }: HadiahProps) {
   const [hadiahDipilih, setHadiahDipilih] = useState<Hadiah | null>(null);
   const [successMessage, setSuccessMessage] = useState("");
+  const [formHadiah, setFormHadiah] = useState({
+    name: "",
+    description: "",
+    pointsCost: 100,
+    stock: 1
+  });
   const redemptions = data.redemptions.filter((item) => item.userId === penggunaAktif.id);
   const transactions = data.transactions.filter((item) => item.userId === penggunaAktif.id);
 
-  function confirmRedeem() {
+  async function confirmRedeem() {
     if (!hadiahDipilih) return;
-    const result = onTukar(hadiahDipilih);
+    const result = await onTukar(hadiahDipilih);
     setHadiahDipilih(null);
     if (result.ok) {
       setSuccessMessage(result.pesan);
     }
+  }
+
+  async function submitHadiah(event: React.FormEvent) {
+    event.preventDefault();
+    await onTambahHadiah(formHadiah);
+    setFormHadiah({ name: "", description: "", pointsCost: 100, stock: 1 });
   }
 
   return (
@@ -62,6 +75,57 @@ export function Hadiah({ data, penggunaAktif, onTukar }: HadiahProps) {
           ))}
         </div>
       </section>
+
+      {penggunaAktif.isAdmin && (
+        <section className="section-block">
+          <div className="section-heading">
+            <p className="eyebrow">Administrator</p>
+            <h2>Tambah hadiah katalog</h2>
+          </div>
+          <form className="form-stack wide-form" onSubmit={submitHadiah}>
+            <div className="form-grid">
+              <label>
+                Nama Hadiah
+                <input
+                  value={formHadiah.name}
+                  onChange={(event) => setFormHadiah({ ...formHadiah, name: event.target.value })}
+                  required
+                />
+              </label>
+              <label>
+                Biaya Poin
+                <input
+                  type="number"
+                  min={1}
+                  value={formHadiah.pointsCost}
+                  onChange={(event) => setFormHadiah({ ...formHadiah, pointsCost: Number(event.target.value) })}
+                  required
+                />
+              </label>
+            </div>
+            <label>
+              Deskripsi
+              <textarea
+                rows={3}
+                value={formHadiah.description}
+                onChange={(event) => setFormHadiah({ ...formHadiah, description: event.target.value })}
+                required
+              />
+            </label>
+            <label>
+              Stok
+              <input
+                type="number"
+                min={0}
+                value={formHadiah.stock}
+                onChange={(event) => setFormHadiah({ ...formHadiah, stock: Number(event.target.value) })}
+                required
+              />
+            </label>
+            <button className="primary-button">Tambahkan Hadiah</button>
+          </form>
+        </section>
+      )}
 
       <section className="section-block two-column">
         <div>

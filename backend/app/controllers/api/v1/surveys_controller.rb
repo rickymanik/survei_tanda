@@ -11,9 +11,9 @@ class Api::V1::SurveysController < ApplicationController
     survey = Survey.new(survey_params)
 
     if survey.save
-      render json: survey, status: :created
+      render json: survey, include: :questions, status: :created
     else
-      render json: { errors: survey.errors.full_messages }, status: :unprocessable_entity
+      render_errors(survey)
     end
   end
 
@@ -21,9 +21,9 @@ class Api::V1::SurveysController < ApplicationController
     survey = Survey.find(params[:id])
 
     if survey.update(survey_params)
-      render json: survey
+      render json: survey, include: :questions
     else
-      render json: { errors: survey.errors.full_messages }, status: :unprocessable_entity
+      render_errors(survey)
     end
   end
 
@@ -35,6 +35,14 @@ class Api::V1::SurveysController < ApplicationController
   private
 
   def survey_params
-    params.require(:survey).permit(:user_id, :title, :description, :category, :target_count, :close_date, :points_reward)
+    params.require(:survey).permit(
+      :user_id,
+      :title,
+      :description,
+      :category,
+      :target_count,
+      :close_date,
+      questions_attributes: [:id, :text, :question_type, :required, :_destroy, { options: [] }]
+    )
   end
 end

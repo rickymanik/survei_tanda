@@ -34,7 +34,10 @@ function parseStoredData(raw: string | null) {
 
 function normalizeData(data: DataAplikasi): DataAplikasi {
   return {
-    users: data.users ?? [],
+    users: (data.users ?? []).map((user) => ({
+      ...user,
+      isAdmin: Boolean(user.isAdmin)
+    })),
     surveys: (data.surveys ?? []).map((survey) => ({
       ...survey,
       pointsReward: Math.max(10, survey.questions.length * 10)

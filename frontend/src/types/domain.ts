@@ -10,6 +10,7 @@ export type Pengguna = {
   city: string;
   occupation: string;
   points: number;
+  isAdmin: boolean;
 };
 
 export type Pertanyaan = {

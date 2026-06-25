@@ -3,8 +3,8 @@ import type { Pengguna } from "../types/domain";
 
 type ProfilProps = {
   penggunaAktif: Pengguna;
-  onSubmit: (form: Pick<Pengguna, "name" | "age" | "gender" | "city" | "occupation">) => void;
-  onGantiPassword: (currentPassword: string, nextPassword: string) => boolean;
+  onSubmit: (form: Pick<Pengguna, "name" | "age" | "gender" | "city" | "occupation">) => void | Promise<void>;
+  onGantiPassword: (currentPassword: string, nextPassword: string) => boolean | Promise<boolean>;
 };
 
 export function Profil({ penggunaAktif, onSubmit, onGantiPassword }: ProfilProps) {
@@ -18,16 +18,16 @@ export function Profil({ penggunaAktif, onSubmit, onGantiPassword }: ProfilProps
   });
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", nextPassword: "", confirmPassword: "" });
 
-  function saveProfile(event: React.FormEvent) {
+  async function saveProfile(event: React.FormEvent) {
     event.preventDefault();
-    onSubmit(form);
+    await onSubmit(form);
     setEditing(false);
   }
 
-  function savePassword(event: React.FormEvent) {
+  async function savePassword(event: React.FormEvent) {
     event.preventDefault();
     if (passwordForm.nextPassword !== passwordForm.confirmPassword) return;
-    const ok = onGantiPassword(passwordForm.currentPassword, passwordForm.nextPassword);
+    const ok = await onGantiPassword(passwordForm.currentPassword, passwordForm.nextPassword);
     if (ok) {
       setPasswordForm({ currentPassword: "", nextPassword: "", confirmPassword: "" });
     }

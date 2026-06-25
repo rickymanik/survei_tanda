@@ -27,9 +27,20 @@ import { buatIdBaru } from "./utils/id";
 import { judulHalaman } from "./utils/rute";
 import { hitungPoinSurvei, surveiMasihBuka } from "./utils/survei";
 import { hapusSesiPengguna, ambilSesiPengguna, simpanSesiPengguna } from "./utils/penyimpanan";
+import {
+  changeUserPassword,
+  createRedemption,
+  createReward,
+  createResponse,
+  createSurvey as createSurveyApi,
+  deleteSurvey as deleteSurveyApi,
+  loginUser,
+  registerUser,
+  updateUserProfile
+} from "./api/client";
 
 export default function App() {
-  const { data, commit } = useDataAplikasi();
+  const { data, commit, refreshData, sedangSinkron, apiTersedia } = useDataAplikasi();
   const { route, navigate } = useRute();
   const [idPenggunaAktif, setIdPenggunaAktif] = useState<string | null>(() => ambilSesiPengguna());
   const [pesan, setPesan] = useState("");
@@ -72,10 +83,22 @@ export default function App() {
     window.setTimeout(() => setPesan(""), 3200);
   }
 
-  function masuk(email: string, password: string) {
-    const user = data.users.find(
-      (item) => item.email.toLowerCase() === email.toLowerCase().trim() && item.password === password
-    );
+  async function masuk(email: string, password: string) {
+    let user: Pengguna | null = null;
+
+    if (apiTersedia) {
+      try {
+        user = await loginUser({ email: email.toLowerCase().trim(), password });
+      } catch (error) {
+        beriNotifikasi(error instanceof Error ? error.message : "Email atau password tidak valid.");
+        return;
+      }
+    } else {
+      user =
+        data.users.find(
+          (item) => item.email.toLowerCase() === email.toLowerCase().trim() && item.password === password
+        ) ?? null;
+    }
 
     if (!user) {
       beriNotifikasi("Email atau password tidak valid.");
@@ -84,10 +107,11 @@ export default function App() {
 
     simpanSesiPengguna(user.id);
     setIdPenggunaAktif(user.id);
+    await refreshData();
     navigate({ name: "beranda" });
   }
 
-  function daftar(form: Omit<Pengguna, "id" | "points">) {
+  async function daftar(form: Omit<Pengguna, "id" | "points" | "isAdmin">) {
     if (data.users.some((user) => user.email.toLowerCase() === form.email.toLowerCase().trim())) {
       beriNotifikasi("Email sudah digunakan.");
       return;
@@ -98,16 +122,30 @@ export default function App() {
       return;
     }
 
-    const user: Pengguna = {
-      ...form,
-      id: buatIdBaru("u"),
-      email: form.email.toLowerCase().trim(),
-      points: 0
-    };
+    let user: Pengguna;
 
-    commit({ ...data, users: [...data.users, user] });
+    if (apiTersedia) {
+      try {
+        user = await registerUser({ ...form, email: form.email.toLowerCase().trim() });
+      } catch (error) {
+        beriNotifikasi(error instanceof Error ? error.message : "Pendaftaran gagal.");
+        return;
+      }
+    } else {
+      user = {
+        ...form,
+        id: buatIdBaru("u"),
+        email: form.email.toLowerCase().trim(),
+        points: 0,
+        isAdmin: false
+      };
+
+      commit({ ...data, users: [...data.users, user] });
+    }
+
     simpanSesiPengguna(user.id);
     setIdPenggunaAktif(user.id);
+    await refreshData();
     navigate({ name: "beranda" });
   }
 
@@ -117,7 +155,7 @@ export default function App() {
     window.history.replaceState({}, "", "/masuk");
   }
 
-  function buatSurvei(payload: Omit<Survei, "id" | "ownerId" | "createdAt" | "pointsReward">) {
+  async function buatSurvei(payload: Omit<Survei, "id" | "ownerId" | "createdAt" | "pointsReward">) {
     if (!penggunaAktif) return;
 
     const invalidChoice = payload.questions.some(
@@ -134,20 +172,31 @@ export default function App() {
       return;
     }
 
-    const survey: Survei = {
-      ...payload,
-      id: buatIdBaru("s"),
-      ownerId: penggunaAktif.id,
-      createdAt: new Date().toISOString(),
-      pointsReward: hitungPoinSurvei(payload)
-    };
+    if (apiTersedia) {
+      try {
+        await createSurveyApi(penggunaAktif.id, payload);
+        await refreshData();
+      } catch (error) {
+        beriNotifikasi(error instanceof Error ? error.message : "Survei gagal disimpan.");
+        return;
+      }
+    } else {
+      const survey: Survei = {
+        ...payload,
+        id: buatIdBaru("s"),
+        ownerId: penggunaAktif.id,
+        createdAt: new Date().toISOString(),
+        pointsReward: hitungPoinSurvei(payload)
+      };
 
-    commit({ ...data, surveys: [survey, ...data.surveys] });
+      commit({ ...data, surveys: [survey, ...data.surveys] });
+    }
+
     navigate({ name: "survei-saya" });
     beriNotifikasi("Survei sudah tampil di beranda.");
   }
 
-  function kirimJawaban(surveyId: string, answers: Record<string, string | string[]>) {
+  async function kirimJawaban(surveyId: string, answers: Record<string, string | string[]>) {
     if (!penggunaAktif) return;
 
     const survey = data.surveys.find((item) => item.id === surveyId);
@@ -186,36 +235,46 @@ export default function App() {
     }
 
     const poinHadiah = hitungPoinSurvei(survey);
-    const response: JawabanSurvei = {
-      id: buatIdBaru("resp"),
-      surveyId,
-      userId: penggunaAktif.id,
-      answers,
-      createdAt: new Date().toISOString()
-    };
+    if (apiTersedia) {
+      try {
+        await createResponse(surveyId, penggunaAktif.id, answers);
+        await refreshData();
+      } catch (error) {
+        beriNotifikasi(error instanceof Error ? error.message : "Jawaban gagal dikirim.");
+        return;
+      }
+    } else {
+      const response: JawabanSurvei = {
+        id: buatIdBaru("resp"),
+        surveyId,
+        userId: penggunaAktif.id,
+        answers,
+        createdAt: new Date().toISOString()
+      };
 
-    const transaction: TransaksiPoin = {
-      id: buatIdBaru("pt"),
-      userId: penggunaAktif.id,
-      amount: poinHadiah,
-      description: `Poin pengisian survei "${survey.title}"`,
-      createdAt: new Date().toISOString()
-    };
+      const transaction: TransaksiPoin = {
+        id: buatIdBaru("pt"),
+        userId: penggunaAktif.id,
+        amount: poinHadiah,
+        description: `Poin pengisian survei "${survey.title}"`,
+        createdAt: new Date().toISOString()
+      };
 
-    commit({
-      ...data,
-      users: data.users.map((user) =>
-        user.id === penggunaAktif.id ? { ...user, points: user.points + poinHadiah } : user
-      ),
-      responses: [...data.responses, response],
-      transactions: [transaction, ...data.transactions]
-    });
+      commit({
+        ...data,
+        users: data.users.map((user) =>
+          user.id === penggunaAktif.id ? { ...user, points: user.points + poinHadiah } : user
+        ),
+        responses: [...data.responses, response],
+        transactions: [transaction, ...data.transactions]
+      });
+    }
 
     navigate({ name: "beranda" });
     beriNotifikasi(`Jawaban terkirim. Kamu mendapat ${poinHadiah} poin.`);
   }
 
-  function tukarHadiah(hadiah: DataHadiah): HasilPenukaran {
+  async function tukarHadiah(hadiah: DataHadiah): Promise<HasilPenukaran> {
     if (!penggunaAktif) return { ok: false, pesan: "Silakan masuk terlebih dahulu." };
     if (hadiah.stock <= 0) {
       beriNotifikasi("Stok hadiah habis.");
@@ -226,48 +285,107 @@ export default function App() {
       return { ok: false, pesan: "Poin kamu belum cukup." };
     }
 
-    const redemption: PenukaranHadiah = {
-      id: buatIdBaru("rd"),
-      userId: penggunaAktif.id,
-      rewardId: hadiah.id,
-      pointsSpent: hadiah.pointsCost,
-      status: "diproses",
-      createdAt: new Date().toISOString()
-    };
+    if (apiTersedia) {
+      try {
+        await createRedemption(penggunaAktif.id, hadiah.id);
+        await refreshData();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Penukaran hadiah gagal.";
+        beriNotifikasi(message);
+        return { ok: false, pesan: message };
+      }
+    } else {
+      const redemption: PenukaranHadiah = {
+        id: buatIdBaru("rd"),
+        userId: penggunaAktif.id,
+        rewardId: hadiah.id,
+        pointsSpent: hadiah.pointsCost,
+        status: "diproses",
+        createdAt: new Date().toISOString()
+      };
 
-    const transaction: TransaksiPoin = {
-      id: buatIdBaru("pt"),
-      userId: penggunaAktif.id,
-      amount: -hadiah.pointsCost,
-      description: `Penukaran ${hadiah.name}`,
-      createdAt: new Date().toISOString()
-    };
+      const transaction: TransaksiPoin = {
+        id: buatIdBaru("pt"),
+        userId: penggunaAktif.id,
+        amount: -hadiah.pointsCost,
+        description: `Penukaran ${hadiah.name}`,
+        createdAt: new Date().toISOString()
+      };
 
-    commit({
-      ...data,
-      users: data.users.map((user) =>
-        user.id === penggunaAktif.id ? { ...user, points: user.points - hadiah.pointsCost } : user
-      ),
-      rewards: data.rewards.map((item) => (item.id === hadiah.id ? { ...item, stock: item.stock - 1 } : item)),
-      redemptions: [redemption, ...data.redemptions],
-      transactions: [transaction, ...data.transactions]
-    });
+      commit({
+        ...data,
+        users: data.users.map((user) =>
+          user.id === penggunaAktif.id ? { ...user, points: user.points - hadiah.pointsCost } : user
+        ),
+        rewards: data.rewards.map((item) => (item.id === hadiah.id ? { ...item, stock: item.stock - 1 } : item)),
+        redemptions: [redemption, ...data.redemptions],
+        transactions: [transaction, ...data.transactions]
+      });
+    }
 
     return { ok: true, pesan: "Hadiah berhasil ditukar dan sedang diproses." };
   }
 
-  function perbaruiProfil(form: Pick<Pengguna, "name" | "age" | "gender" | "city" | "occupation">) {
+  async function tambahHadiah(payload: Pick<DataHadiah, "name" | "description" | "pointsCost" | "stock">) {
+    if (!penggunaAktif?.isAdmin) {
+      beriNotifikasi("Hanya administrator yang dapat menambahkan hadiah.");
+      return;
+    }
+
+    if (!payload.name.trim() || !payload.description.trim()) {
+      beriNotifikasi("Nama dan deskripsi hadiah wajib diisi.");
+      return;
+    }
+
+    if (payload.pointsCost <= 0 || payload.stock < 0) {
+      beriNotifikasi("Biaya poin dan stok hadiah tidak valid.");
+      return;
+    }
+
+    if (apiTersedia) {
+      try {
+        await createReward(penggunaAktif.id, payload);
+        await refreshData();
+      } catch (error) {
+        beriNotifikasi(error instanceof Error ? error.message : "Hadiah gagal ditambahkan.");
+        return;
+      }
+    } else {
+      const reward: DataHadiah = {
+        ...payload,
+        id: buatIdBaru("r")
+      };
+
+      commit({ ...data, rewards: [reward, ...data.rewards] });
+    }
+
+    beriNotifikasi("Hadiah baru berhasil ditambahkan ke katalog.");
+  }
+
+  async function perbaruiProfil(form: Pick<Pengguna, "name" | "age" | "gender" | "city" | "occupation">) {
     if (!penggunaAktif) return;
-    commit({
-      ...data,
-      users: data.users.map((user) => (user.id === penggunaAktif.id ? { ...user, ...form } : user))
-    });
+
+    if (apiTersedia) {
+      try {
+        await updateUserProfile(penggunaAktif.id, form);
+        await refreshData();
+      } catch (error) {
+        beriNotifikasi(error instanceof Error ? error.message : "Profil gagal diperbarui.");
+        return;
+      }
+    } else {
+      commit({
+        ...data,
+        users: data.users.map((user) => (user.id === penggunaAktif.id ? { ...user, ...form } : user))
+      });
+    }
+
     beriNotifikasi("Profil berhasil diperbarui.");
   }
 
-  function gantiPassword(currentPassword: string, nextPassword: string) {
+  async function gantiPassword(currentPassword: string, nextPassword: string) {
     if (!penggunaAktif) return false;
-    if (penggunaAktif.password !== currentPassword) {
+    if (!apiTersedia && penggunaAktif.password !== currentPassword) {
       beriNotifikasi("Password saat ini tidak sesuai.");
       return false;
     }
@@ -276,25 +394,46 @@ export default function App() {
       return false;
     }
 
-    commit({
-      ...data,
-      users: data.users.map((user) => (user.id === penggunaAktif.id ? { ...user, password: nextPassword } : user))
-    });
+    if (apiTersedia) {
+      try {
+        await changeUserPassword(penggunaAktif.id, currentPassword, nextPassword);
+      } catch (error) {
+        beriNotifikasi(error instanceof Error ? error.message : "Password gagal diganti.");
+        return false;
+      }
+    } else {
+      commit({
+        ...data,
+        users: data.users.map((user) => (user.id === penggunaAktif.id ? { ...user, password: nextPassword } : user))
+      });
+    }
+
     beriNotifikasi("Password berhasil diganti.");
     return true;
   }
 
-  function hapusSurvei(surveyId: string) {
-    commit({
-      ...data,
-      surveys: data.surveys.filter((survey) => survey.id !== surveyId),
-      responses: data.responses.filter((response) => response.surveyId !== surveyId)
-    });
+  async function hapusSurvei(surveyId: string) {
+    if (apiTersedia) {
+      try {
+        await deleteSurveyApi(surveyId);
+        await refreshData();
+      } catch (error) {
+        beriNotifikasi(error instanceof Error ? error.message : "Survei gagal dihapus.");
+        return;
+      }
+    } else {
+      commit({
+        ...data,
+        surveys: data.surveys.filter((survey) => survey.id !== surveyId),
+        responses: data.responses.filter((response) => response.surveyId !== surveyId)
+      });
+    }
+
     setIdSurveiDihapus(null);
     beriNotifikasi("Survei berhasil dihapus.");
   }
 
-  if (sedangMemuat) return <LayarMuat />;
+  if (sedangMemuat || sedangSinkron) return <LayarMuat />;
 
   if (!penggunaAktif) {
     if (route.name === "daftar") {
@@ -347,7 +486,9 @@ export default function App() {
           <NotFound onBack={() => navigate({ name: "survei-saya" })} />
         ))}
 
-      {route.name === "hadiah" && <Hadiah data={data} penggunaAktif={penggunaAktif} onTukar={tukarHadiah} />}
+      {route.name === "hadiah" && (
+        <Hadiah data={data} penggunaAktif={penggunaAktif} onTukar={tukarHadiah} onTambahHadiah={tambahHadiah} />
+      )}
 
       {route.name === "profil" && (
         <Profil penggunaAktif={penggunaAktif} onSubmit={perbaruiProfil} onGantiPassword={gantiPassword} />

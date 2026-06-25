@@ -11,7 +11,8 @@ export const dataAwal: DataAplikasi = {
       gender: "Laki-laki",
       city: "Medan",
       occupation: "Mahasiswa",
-      points: 1000
+      points: 1000,
+      isAdmin: false
     },
     {
       id: "u-creator",
@@ -22,7 +23,20 @@ export const dataAwal: DataAplikasi = {
       gender: "Perempuan",
       city: "Jakarta",
       occupation: "Peneliti",
-      points: 0
+      points: 0,
+      isAdmin: false
+    },
+    {
+      id: "u-admin",
+      name: "Administrator Survei Tanda",
+      email: "admin@surveitanda.com",
+      password: "password",
+      age: "30",
+      gender: "",
+      city: "Jakarta",
+      occupation: "Administrator",
+      points: 0,
+      isAdmin: true
     }
   ],
   surveys: [

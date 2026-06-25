@@ -1,6 +1,6 @@
 class Api::V1::RedemptionsController < ApplicationController
   def index
-    render json: Redemption.includes(:user, :reward).all
+    render json: Redemption.order(created_at: :desc)
   end
 
   def show
@@ -8,18 +8,45 @@ class Api::V1::RedemptionsController < ApplicationController
   end
 
   def create
-    redemption = Redemption.new(redemption_params)
+    user = User.find(redemption_params[:user_id])
+    reward = Reward.find(redemption_params[:reward_id])
 
-    if redemption.save
-      render json: redemption, status: :created
-    else
-      render json: { errors: redemption.errors.full_messages }, status: :unprocessable_entity
+    if reward.stock.to_i <= 0
+      render json: { message: "Stok hadiah habis" }, status: :unprocessable_entity
+      return
     end
+
+    if user.points.to_i < reward.points_cost.to_i
+      render json: { message: "Poin kamu belum cukup" }, status: :unprocessable_entity
+      return
+    end
+
+    redemption = nil
+
+    ActiveRecord::Base.transaction do
+      user.decrement!(:points, reward.points_cost)
+      reward.decrement!(:stock, 1)
+      redemption = Redemption.create!(
+        user: user,
+        reward: reward,
+        points_spent: reward.points_cost,
+        status: redemption_params[:status].presence || "diproses"
+      )
+      PointTransaction.create!(
+        user: user,
+        amount: -reward.points_cost,
+        description: "Penukaran #{reward.name}"
+      )
+    end
+
+    render json: redemption, status: :created
+  rescue ActiveRecord::RecordInvalid => error
+    render json: { errors: error.record.errors.full_messages }, status: :unprocessable_entity
   end
 
   private
 
   def redemption_params
-    params.require(:redemption).permit(:user_id, :reward_id, :points_spent, :status)
+    params.require(:redemption).permit(:user_id, :reward_id)
   end
 end

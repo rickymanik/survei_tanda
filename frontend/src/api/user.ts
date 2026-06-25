@@ -1,15 +1,12 @@
-import { apiRequest } from ".";
+import { changeUserPassword, loginUser, registerUser, updateUserProfile } from "./client";
 
 export function login(payload: { email: string; password: string }) {
-  return apiRequest("/login", {
-    method: "POST",
-    body: JSON.stringify(payload)
-  });
+  return loginUser(payload);
 }
 
 export function register(payload: unknown) {
-  return apiRequest("/register", {
-    method: "POST",
-    body: JSON.stringify({ user: payload })
-  });
+  return registerUser(payload as Parameters<typeof registerUser>[0]);
 }
+
+export const updateProfile = updateUserProfile;
+export const changePassword = changeUserPassword;

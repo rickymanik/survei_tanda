@@ -3,7 +3,7 @@ import type { Pengguna } from "../types/domain";
 
 type DaftarProps = {
   pesan: string;
-  onDaftar: (form: Omit<Pengguna, "id" | "points">) => void;
+  onDaftar: (form: Omit<Pengguna, "id" | "points" | "isAdmin">) => void;
   onKeMasuk: () => void;
 };
 
